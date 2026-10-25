@@ -1,7 +1,6 @@
-import cv2 
 import numpy as np
 import pygame as game
-import random
+
 
 class Basket:
     def __init__(self,screenwidth, screenheight):
