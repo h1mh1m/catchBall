@@ -91,6 +91,9 @@ class MainGame:
         scoreSurface = self.fontBtn.render(f"Skor:{self.score}",True,self.YELLOW)
         self.screen.blit(scoreSurface,(20,20))
 
+        speedSurface = self.fontBtn.render(f"Speed:{self.bola.speed}", True,self.YELLOW)
+        self.screen.blit(speedSurface,(20,40))
+
         escSurface = self.fontUI.render("Tekan ESC untuk kembali ke MENU", True, self.WHITE)
 
         game.draw.rect(escSurface,self.BLACK,(15,self.height - 40,escSurface.get_width() + 10, 30))
