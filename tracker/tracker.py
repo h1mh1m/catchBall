@@ -2,11 +2,11 @@ import cv2
 import numpy as np
 import pygame as game
 
-class ImageTracker:
+class Tracker:
     def __init__(self, src=0, width=640, height=480):
         self.cap = cv2.VideoCapture(src)
-        self.cap.set(CAP_PROP_FRAME_WIDTH, width)
-        self.cap.set(CAP_PROP_FRAME_HEIGHT, height)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         self.lower_black = np.array([0, 0, 0])
         self.upper_black = np.array([180, 255, 70])
         self.kernel = np.ones((5,5), np.uint8)
@@ -24,9 +24,9 @@ class ImageTracker:
         webcamSurface = game.transform.flip(frameSurface,True,False)
 
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(frame,self.lower_black,self.upper_black)
-        mask = cv2.erode(frame,kernel=self.kernel,iterations=1)
-        mask = cv2.dilate(frame,kernel=self.kernel,iterations=2)
+        mask = cv2.inRange(hsv,self.lower_black,self.upper_black)
+        mask = cv2.erode(mask,kernel=self.kernel,iterations=1)
+        mask = cv2.dilate(mask,kernel=self.kernel,iterations=2)
 
         contour,_ = cv2.findContours(
             mask,cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
@@ -41,7 +41,7 @@ class ImageTracker:
                     cx = int(m["m10"]/m["m00"])
                     detectedXratio = cx / frame.shape[1]
 
-        return webcamSurface, frameSurface
+        return webcamSurface, detectedXratio
 
     def release(self):
         self.cap.release()

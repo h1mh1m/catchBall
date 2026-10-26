@@ -4,7 +4,7 @@ import pygame as game
 
 class Basket:
     def __init__(self,screenwidth, screenheight):
-        self.screenwidth = screenwidth
+        self.Screenwidth = screenwidth
         self.width = 125
         self.height = 25
         self.x = screenwidth//2 - self.width//2
@@ -13,9 +13,9 @@ class Basket:
 
     def updatePosition(self,xRatio):
         if xRatio is not None:
-            self.x = int(xRatio * self.screenwidth) - (self.width // 2)
+            self.x = int(xRatio * self.Screenwidth) - (self.width // 2)
 
-        self.x = max(0, min(self.screenwidth - self.width, self.x))
+        self.x = max(0, min(self.Screenwidth - self.width, self.x))
 
     def draw(self, surface):
         game.draw.rect(

@@ -27,13 +27,14 @@ class Ball:
             self.x = random.randint(
                 self.radius, self.widthscreen - self.radius
             )
-            self.speed += 0.2
+            self.speed += 1
         return caught
 
     def isOutofField(self):
         if self.y > self.heightscreen :
             self.y = 0
             self.x = random.randint(self.radius,self.widthscreen - self.radius)
+            self.speed -= 1
             return True
         return False
 

@@ -1,70 +1,135 @@
 import cv2 
 import numpy as np
+import sys
 import pygame as game
 import random
+from ball import ball as bola
+from basket import basket as keranjang
+from tracker import tracker as ngetrack
 
-#Set surface
-WIDTH, HEIGHT = 800, 600
-screen = game.display.set_mode((WIDTH, HEIGHT))
-gravitation = 10
-Score = 0
-level = 1
+class MainGame:
+    def __init__(self, Swidth=800, Sheight=600):
+        game.init()
+        self.width = Swidth
+        self.height = Sheight
+        self.screen = game.display.set_mode((Swidth, Sheight))
+        game.display.set_caption("CatchWOWOBiji")
+        self.clock = game.time.Clock()
 
-#Set awal ball
-ball = 100
-ballradius = 10
-ballX = random.randint(ballradius, WIDTH - ballradius)
-ballY = 0
+        self.tracker = ngetrack.Tracker()
+        self.bola = bola.Ball(self.width,self.height)
+        self.wadah = keranjang.Basket(self.width,self.height)
 
-#Set awal keranjang
-basketWitdh = 100
-basketHeight = 30
-basketX = WIDTH/2 - basketWitdh/2
-basketY = HEIGHT - basketHeight - 40
+        self.WHITE = (255, 255, 255)
+        self.BLACK = (20, 20, 20)
+        self.YELLOW = (255, 215, 0)
+        self.BLUE = (50, 150, 250)
+        self.GREEN = (50, 200, 80)
 
-WHITE = (255, 255, 255)
-BLACK = (20, 20, 20)
-RED = (230, 50, 50)
-BLUE = (50, 150, 250)
-GREEN = (50, 200, 80)
-YELLOW = (255, 215, 0)
-GRAY = (100, 100, 100)
+        self.fontTitle = game.font.SysFont(None, 64)
+        self.fontBtn = game.font.SysFont(None, 36)
+        self.fontUI = game.font.SysFont(None, 28)
 
-#Set warna hitam 
-LOWER_BLACK = ([0,0,0])
-UPPER_BLACK = ([180,255,70])
+        self.state = "MENU"
+        self.score = 0
+        self.running = True
 
-cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, WIDTH)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, HEIGHT)
+        self.btnPlayRect = game.Rect(self.width // 2 - 100, 250, 200, 50)
+        self.btnQuitRect = game.Rect(self.width // 2 - 100, 330, 200, 50)
 
-font_title = game.font.SysFont(None, 64)
-font_btn = game.font.SysFont(None, 36)
-font_ui = game.font.SysFont(None, 28)
+    def resetGame(self):
+        self.score = 0
+        self.bola.reset()
 
-btn_screen = game.Rect(WIDTH // 2 - 100, 250, 200, 50)
+    def drawButton(self, rect, text, isHover):
+        color = self.YELLOW if isHover else self.BLUE
+        game.draw.rect(self.screen, color, rect, border_radius=10)
+        game.draw.rect(self.screen, self.WHITE, rect, width=2, border_radius=10)
 
-def drawButton(react, text, hover):
-    color = GREEN if hover else BLUE
-    game.draw.rect(screen, color, react, border_radius=10)
-    game.draw.rect(screen, WHITE, react, width=2, border_radius=10)
-    btn_text = font_btn.render(text, True, BLACK if hover else WHITE)
-    text_rect =  btn_text.get_rect(center=react.center)
-    screen.blit(btn_text,text_rect)
+        btnText = self.fontBtn.render(
+            text, True, self.BLACK if isHover else self.WHITE
+        )
+        textRect = btnText.get_rect(center=rect.center)
+        self.screen.blit(btnText, textRect)
 
-def mainScreen():
-    game.display.set_caption("Catch WowoBall")
-    
+    def HandleEvents(self):
+        mousePosition = game.mouse.get_pos()
+        for event in game.event.get():
+            if event.type == game.QUIT:
+                self.running = False
+            if event.type == game.MOUSEBUTTONDOWN and event.button == 1:
+                if self.state == "MENU":
+                    if self.btnPlayRect.collidepoint(mousePosition):
+                        self.resetGame()
+                        self.state = "PLAY"
+                    elif self.btnQuitRect.collidepoint(mousePosition):
+                        self.running = False
 
-    
+            if event.type == game.KEYDOWN:
+                if event.key == game.K_ESCAPE:
+                    if self.state == "PLAY":
+                        self.state = "MENU"
+                    elif self.state == "MENU":
+                        self.running = False
 
+    def renderMenu(self, mousePosition):
+        overLay = game.Surface((self.width, self.height))
+        overLay.set_alpha(150)
+        overLay.fill((0,0,0))
+        self.screen.blit(overLay,(0,0))
 
+        TitleSurface = self.fontTitle.render("CATCH WOWO BALL",True,self.GREEN)
+        self.screen.blit(TitleSurface,TitleSurface.get_rect(center=(self.width//2, 150)))
 
+        self.drawButton(self.btnPlayRect,"PLAY",self.btnPlayRect.collidepoint(mousePosition))
+        self.drawButton(self.btnQuitRect,"QUIT",self.btnQuitRect.collidepoint(mousePosition))
 
+        infoText = self.fontUI.render("Gunakan apapun yang berwarna HITAM untuk mengontrol keranjang",True,self.WHITE)
+        self.screen.blit(infoText,infoText.get_rect(center=(self.width//2, self.height - 50)))
 
+    def renderUiPlay(self):
+        scoreSurface = self.fontBtn.render(f"Skor:{self.score}",True,self.YELLOW)
+        self.screen.blit(scoreSurface,(20,20))
 
+        escSurface = self.fontUI.render("Tekan ESC untuk kembali ke MENU", True, self.WHITE)
 
+        game.draw.rect(escSurface,self.BLACK,(15,self.height - 40,escSurface.get_width() + 10, 30))
+        self.screen.blit(escSurface,(20, self.height - 35))
 
+    def run(self):
+        while self.running:
+            mousePosition = game.mouse.get_pos()
 
+            webcamSurface, Xratio = self.tracker.frameProcess(self.width,self.height)
+
+            self.wadah.updatePosition(xRatio=Xratio)
+
+            self.HandleEvents()
+
+            if webcamSurface:
+                self.screen.blit(webcamSurface,(0,0))
+            else:
+                self.screen.fill(self.BLACK)
+            if self.state == "MENU":
+                self.renderMenu(mousePosition)
+            elif self.state == "PLAY":
+                self.bola.update()
+
+                if self.bola.isCaught(self.wadah):
+                    self.score += 1
+
+                if self.bola.isOutofField():
+                    self.score = max(0,self.score - 1)
+
+                self.wadah.draw(self.screen)
+                self.bola.draw(self.screen)
+                self.renderUiPlay()
+
+            game.display.flip()
+            self.clock.tick()
+
+        self.tracker.release()
+        game.quit()
+        sys.exit()
 
 
